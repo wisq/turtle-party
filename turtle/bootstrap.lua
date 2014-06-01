@@ -3,6 +3,7 @@ function get(file)
   if response then
     local fh = fs.open(file, "w")
     fh.writeLine(response.readAll())
+    fh.close()
   else
     print("Failed to retrieve " .. file)
   end
