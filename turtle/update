@@ -1,5 +1,10 @@
 -- ex: ft=lua
 
+-- Note: Do not use fs.getSize() anywhere here.
+-- I'm not sure if this is platform-dependent or what, but it seems
+-- my (Linux) server and (Mac) CCLite emulator disagree on sizes.
+-- Best to use "expected size" throughout.
+
 os.loadAPI("apis/sha1")
 
 function httpGet(what, url)
@@ -30,7 +35,7 @@ function writeFile(file, content, size, hash)
   out_fh.write(content)
   out_fh.close()
 
-  validate(readFile(tempfile), size, hash, "Written file " .. file)
+  validate(readFile(tempfile, size), size, hash, "Written file " .. tempfile)
 
   fs.delete(file)
   fs.move(tempfile, file)
@@ -42,8 +47,8 @@ function hashText(text)
   return sha1.SHA1(text)
 end
 
-function hashFile(file)
-  local content = readFile(file)
+function hashFile(file, size)
+  local content = readFile(file, size)
   if content then
     return hashText(content)
   else
@@ -51,7 +56,7 @@ function hashFile(file)
   end
 end
 
-function readFile(file)
+function readFile(file, expect_size)
   local fh = fs.open(file, "r")
   if not fh then
     return nil
@@ -60,7 +65,7 @@ function readFile(file)
   local content = fh.readAll()
   fh.close()
 
-  if string.len(content) == fs.getSize(file) - 1 then
+  if expect_size and string.len(content) == expect_size - 1 then
     -- readAll stripped EOL
     content = content .. "\n"
   end
@@ -73,15 +78,6 @@ function validate(data, expect_size, expect_hash, err_prefix)
 
   local hash = hashText(data)
   assert(hash == expect_hash, err_prefix .. " failed hash check: got " .. hash .. ", expected " .. expect_hash)
-end
-
-function fileSize(file)
-  local success, size = pcall(fs.getSize, file)
-  if success then
-    return size
-  else
-    return nil
-  end
 end
 
 function touchFile(file)
@@ -100,7 +96,7 @@ while true do
   local file, size, hash = string.match(line, "^(%S+)%s+(%d+)%s+(%S+)$")
   size = tonumber(size)
 
-  if fileSize(file) ~= size or hashFile(file) ~= hash then
+  if hashFile(file, size) ~= hash then
     local content = httpGetAll(file, "/update/file?path=" .. file, size)
     validate(content, size, hash, "Download for " .. file)
     writeFile(file, content, size, hash)
