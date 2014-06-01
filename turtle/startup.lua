@@ -6,7 +6,7 @@ function runScript(script)
   end
 end
 
-function main()
+function init()
   fs.delete(".update-reboot")
   runScript("update")
   if fs.exists(".update-reboot") then
@@ -15,6 +15,11 @@ function main()
     return os.reboot()
   end
   runScript("cleanup")
+end
+
+function main()
+  init()
+  os.loadAPI("apis/party")
 end
 
 main()
