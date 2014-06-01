@@ -24,14 +24,18 @@ function httpGetAll(what, url, expect_size)
   return data
 end
 
-function writeFile(file, content)
+function writeFile(file, content, size, hash)
   local tempfile = file .. ".new"
   local out_fh = fs.open(tempfile, "w")
   out_fh.write(content)
   out_fh.close()
 
+  validate(readFile(tempfile), size, hash, "Written file " .. file)
+
   fs.delete(file)
   fs.move(tempfile, file)
+
+  print("Wrote " .. file .. " (" .. size .. " bytes)")
 end
 
 function hashText(text)
@@ -99,9 +103,7 @@ while true do
   if fileSize(file) ~= size or hashFile(file) ~= hash then
     local content = httpGetAll(file, "/update/file?path=" .. file, size)
     validate(content, size, hash, "Download for " .. file)
-    writeFile(file, content)
-    validate(readFile(file), size, hash, "Written file " .. file)
-    print("Wrote " .. file .. " (" .. size .. " bytes)")
+    writeFile(file, content, size, hash)
 
     if file == "startup" or file == "update" then
       touchFile(".update-reboot")
