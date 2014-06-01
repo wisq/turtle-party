@@ -6,6 +6,21 @@ require 'rails/all'
 # you've limited to :test, :development, or :production.
 Bundler.require(*Rails.groups)
 
+class ForceJsonParams
+  def initialize(app)
+    @app = app
+  end
+
+  def call(env)
+    env['CONTENT_TYPE'] = 'application/json' if (
+      env['REQUEST_METHOD'] == 'POST' &&
+      env['CONTENT_TYPE'] == 'application/x-www-form-urlencoded'
+    )
+
+    @app.call(env)
+  end
+end
+
 module TurtleParty
   class Application < Rails::Application
     # Settings in config/environments/* take precedence over those specified here.
@@ -19,5 +34,7 @@ module TurtleParty
     # The default locale is :en and all translations from config/locales/*.rb,yml are auto loaded.
     # config.i18n.load_path += Dir[Rails.root.join('my', 'locales', '*.{rb,yml}').to_s]
     # config.i18n.default_locale = :de
+
+    config.middleware.insert_before ActionDispatch::ParamsParser, ForceJsonParams
   end
 end

@@ -20,6 +20,7 @@ end
 function main()
   init()
   os.loadAPI("apis/party")
+  party.checkin()
 end
 
 main()
