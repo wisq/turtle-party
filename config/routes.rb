@@ -1,4 +1,9 @@
 Rails.application.routes.draw do
+  get '/update/manifest', to: 'update#manifest'
+  get '/update/file', to: 'update#file'
+end
+
+__END__
   # The priority is based upon order of creation: first created -> highest priority.
   # See how all your routes lay out with "rake routes".
 
@@ -53,4 +58,3 @@ Rails.application.routes.draw do
   #     # (app/controllers/admin/products_controller.rb)
   #     resources :products
   #   end
-end

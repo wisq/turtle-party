@@ -1,0 +1,113 @@
+-- ex: ft=lua
+
+os.loadAPI("apis/sha1")
+
+function httpGet(what, url)
+  local response = http.get("http://localhost:3000" .. url)
+  local err = nil
+
+  assert(response, "Failed to retrieve " .. what .. ": request failed")
+  code = response.getResponseCode()
+  assert(code == 200, "Failed to retrieve " .. what .. ": HTTP code " .. code)
+  return response
+end
+
+function httpGetAll(what, url, expect_size)
+  local response = httpGet(what, url)
+  local data = response.readAll()
+  response.close()
+
+  if string.len(data) == expect_size - 1 then -- readAll stripped EOL
+    data = data .. "\n"
+  end
+
+  return data
+end
+
+function writeFile(file, content)
+  local tempfile = file .. ".new"
+  local out_fh = fs.open(tempfile, "w")
+  out_fh.write(content)
+  out_fh.close()
+
+  fs.delete(file)
+  fs.move(tempfile, file)
+end
+
+function hashText(text)
+  return sha1.SHA1(text)
+end
+
+function hashFile(file)
+  local content = readFile(file)
+  if content then
+    return hashText(content)
+  else
+    return nil
+  end
+end
+
+function readFile(file)
+  local fh = fs.open(file, "r")
+  if not fh then
+    return nil
+  end
+
+  local content = fh.readAll()
+  fh.close()
+
+  if string.len(content) == fs.getSize(file) - 1 then
+    -- readAll stripped EOL
+    content = content .. "\n"
+  end
+  return content
+end
+
+function validate(data, expect_size, expect_hash, err_prefix)
+  local size = string.len(data)
+  assert(size == expect_size, err_prefix .. " failed size check: got " .. size .. ", expected " .. expect_size)
+
+  local hash = hashText(data)
+  assert(hash == expect_hash, err_prefix .. " failed hash check: got " .. hash .. ", expected " .. expect_hash)
+end
+
+function fileSize(file)
+  local success, size = pcall(fs.getSize, file)
+  if success then
+    return size
+  else
+    return nil
+  end
+end
+
+function touchFile(file)
+  fs.open(file, "w").close()
+end
+
+print "Updating ..."
+local manifest = httpGet("manifest", "/update/manifest")
+
+while true do
+  local line = manifest.readLine()
+  if not line then
+    break
+  end
+
+  local file, size, hash = string.match(line, "^(%S+)%s+(%d+)%s+(%S+)$")
+  size = tonumber(size)
+
+  if fileSize(file) ~= size or hashFile(file) ~= hash then
+    local content = httpGetAll(file, "/update/file?path=" .. file, size)
+    validate(content, size, hash, "Download for " .. file)
+    writeFile(file, content)
+    validate(readFile(file), size, hash, "Written file " .. file)
+    print("Wrote " .. file .. " (" .. size .. " bytes)")
+
+    if file == "startup" or file == "update" then
+      touchFile(".update-reboot")
+    end
+  end
+end
+
+manifest.close()
+print "Update complete."
