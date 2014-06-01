@@ -1,5 +1,3 @@
--- ex: ft=lua
-
 -- Note: Do not use fs.getSize() anywhere here.
 -- I'm not sure if this is platform-dependent or what, but it seems
 -- my (Linux) server and (Mac) CCLite emulator disagree on sizes.

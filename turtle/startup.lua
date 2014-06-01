@@ -1,5 +1,3 @@
--- ex: ft=lua
-
 function runScript(script)
   if not os.run({}, script) then
     print("Script \"" .. script .. "\" failed!  Rebooting in 10 secs.")

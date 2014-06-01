@@ -1,5 +1,3 @@
--- ex: ft=lua
-
 function get(file)
   local response = http.get("http://localhost:3000/update/file?path=" .. file)
   if response then

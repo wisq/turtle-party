@@ -1,5 +1,3 @@
--- ex: ft=lua
-
 function dump(value, depth, key)
   local output = ""
   local linePrefix = ""
