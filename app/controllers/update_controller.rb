@@ -10,7 +10,7 @@ class UpdateController < ApplicationController
   end
 
   def file
-    path = (TURTLE_PATH + params[:path]).realpath
+    path = (TURTLE_PATH + (params[:path] + '.lua')).realpath
 
     if path.to_s.start_with?(TURTLE_PATH.to_s + "/") && path.file?
       send_file(path)
@@ -24,10 +24,10 @@ class UpdateController < ApplicationController
   def generate_manifest
     manifest = {}
     TURTLE_PATH.find do |file|
-      next unless file.file? || file.symlink?
-      path = file.relative_path_from(TURTLE_PATH)
+      next unless file.file? && file.to_s.end_with?('.lua')
+      path = file.relative_path_from(TURTLE_PATH).to_s.sub(/\.lua$/, '')
       digest = Digest::SHA1.hexdigest(file.read)
-      manifest[path.to_s] = [file.size, digest]
+      manifest[path] = [file.size, digest]
     end
     manifest
   end
