@@ -20,7 +20,15 @@ end
 function main()
   init()
   os.loadAPI("apis/party")
-  party.checkin()
+  party.main()
 end
 
-main()
+local success, err_msg = pcall(main)
+if success then
+  print("Unexpectedly exited main loop?")
+else
+  print("Error in main loop: " .. err_msg)
+end
+print("Rebooting in 10 secs.")
+sleep(10)
+os.reboot()

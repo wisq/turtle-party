@@ -13,4 +13,8 @@ class PartyController < ApplicationController
 
     render :json => guest
   end
+
+  def next_task
+    render :json => {:task => 'standby', :seconds => 15}
+  end
 end

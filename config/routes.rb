@@ -2,6 +2,7 @@ Rails.application.routes.draw do
   get '/update/manifest', to: 'update#manifest'
   get '/update/file', to: 'update#file'
   post '/party/checkin', to: 'party#checkin'
+  post '/party/next_task', to: 'party#next_task'
 end
 
 __END__
