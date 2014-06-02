@@ -11,6 +11,7 @@ end
 
 fs.makeDir("apis")
 get("apis/sha1")
+get("apis/json")
 get("update")
 
 if os.run({}, "update") then

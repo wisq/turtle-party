@@ -4,6 +4,7 @@
 -- Best to use "expected size" throughout.
 
 os.loadAPI("apis/sha1")
+os.loadAPI("apis/json")
 
 function httpGet(what, url)
   local response = http.get("http://localhost:3000" .. url)
@@ -20,7 +21,7 @@ function httpGetAll(what, url, expect_size)
   local data = response.readAll()
   response.close()
 
-  if string.len(data) == expect_size - 1 then -- readAll stripped EOL
+  if expect_size and string.len(data) == expect_size - 1 then -- readAll stripped EOL
     data = data .. "\n"
   end
 
@@ -33,12 +34,16 @@ function writeFile(file, content, size, hash)
   out_fh.write(content)
   out_fh.close()
 
-  validate(readFile(tempfile, size), size, hash, "Written file " .. tempfile)
+  if hash then
+    validate(readFile(tempfile, size), size, hash, "Written file " .. tempfile)
+  end
 
   fs.delete(file)
   fs.move(tempfile, file)
 
-  print("Wrote " .. file .. " (" .. size .. " bytes)")
+  if size then
+    print("Wrote " .. file .. " (" .. size .. " bytes)")
+  end
 end
 
 function hashText(text)
@@ -83,16 +88,11 @@ function touchFile(file)
 end
 
 print "Updating ..."
-local manifest = httpGet("manifest", "/update/manifest")
+local update_data = json.decode(httpGetAll("manifest", "/update/manifest"))
 
-while true do
-  local line = manifest.readLine()
-  if not line then
-    break
-  end
-
-  local file, size, hash = string.match(line, "^(%S+)%s+(%d+)%s+(%S+)$")
-  size = tonumber(size)
+for file, file_data in pairs(update_data['manifest']) do
+  local size = file_data['size']
+  local hash = file_data['hash']
 
   if hashFile(file, size) ~= hash then
     local content = httpGetAll(file, "/update/file?path=" .. file, size)
@@ -105,5 +105,7 @@ while true do
   end
 end
 
-manifest.close()
+local version = update_data['version']
+writeFile(".version", version)
+
 print "Update complete."
