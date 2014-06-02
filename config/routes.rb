@@ -1,6 +1,7 @@
 Rails.application.routes.draw do
   get '/update/manifest', to: 'update#manifest'
   get '/update/file', to: 'update#file'
+  get '/update/check/:version', to: 'update#check'
   post '/party/checkin', to: 'party#checkin'
   post '/party/next_task', to: 'party#next_task'
 end

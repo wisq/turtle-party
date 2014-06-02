@@ -4,6 +4,7 @@ function main()
   checkin()
 
   while true do
+    check_for_updates()
     do_task()
   end
 end
@@ -37,13 +38,30 @@ function do_task()
     error "Failed to retrieve next task!"
   end
 
-  local data_out = json.decode(response.readAll())
+  local json_out = response.readAll()
+  local data_out = json.decode(json_out)
   local task = data_out['task']
 
   if task == 'standby' then
     local seconds = tonumber(data_out['seconds'])
     print("Standing by for " .. seconds .. " seconds.")
     sleep(seconds)
+  else
+    error("Unknown task: " .. json_out)
+  end
+end
+
+function check_for_updates()
+  local response = http.get("http://localhost:3000/update/check/" .. getVersion())
+
+  if not response then
+    print("Update check failed.")
+  elseif response.readAll() == "OKAY" then
+    -- nothing to do
+  else
+    print("Update needed!  Rebooting in 3 seconds.")
+    sleep(3)
+    os.reboot()
   end
 end
 
@@ -53,4 +71,11 @@ function getDeviceType()
   else
     return "computer"
   end
+end
+
+function getVersion()
+  local fh = fs.open(".version", "r")
+  local version = fh.readAll()
+  fh.close()
+  return version
 end
