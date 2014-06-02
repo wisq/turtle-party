@@ -1,17 +1,24 @@
 os.loadAPI("apis/json")
 
 function checkin()
-  local data = {
+  local data_in = {
     id    = os.getComputerID(),
     label = os.getComputerLabel(),
     dev_type = getDeviceType()
   }
-  local json = json.encode(data)
+  local response = http.post("http://localhost:3000/party/checkin", json.encode(data_in))
 
-  if http.post("http://localhost:3000/party/checkin", json) then
-    print "checked in"
+  if response then
+    local data_out = json.decode(response.readAll())
+
+    local new_label = data_out['label']
+    if new_label and new_label ~= os.getComputerLabel() then
+      os.setComputerLabel(new_label)
+      print("Set label to '" .. new_label .. "'.")
+    end
+    print "Checked in."
   else
-    print "checkin failed"
+    error "Checkin failed!"
   end
 end
 
